@@ -25,6 +25,16 @@ gulp.task('imageResize', function() {
   var srcImgPath = 'src/views/images/';
   var destImgPath = 'dist/views/images/';
 
+  // 100 pixels wide
+  gulp.src(srcImgPath + 'pizzeria.jpg')
+      .pipe(rename('pizzeria-100.jpg'))
+      .pipe(imageResize({
+        width: 100,
+        imageMagick: true,
+        quality: 0.8
+      }))
+      .pipe(gulp.dest(destImgPath));
+
   // 300 pixels wide
   gulp.src(srcImgPath + 'pizzeria.jpg')
       .pipe(rename('pizzeria-300.jpg'))
