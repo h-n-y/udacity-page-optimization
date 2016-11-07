@@ -35,6 +35,11 @@ form {
   z-index: -1;
 }
 
+/* Assign this class to an element that should be on its own layer */
+.layer {
+  will-change: transform;
+}
+
 .randomPizzaContainer {
   float: left;
   display: flex;

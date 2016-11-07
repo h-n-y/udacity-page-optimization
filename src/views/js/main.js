@@ -493,20 +493,74 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
   console.log("Average scripting time to generate last 10 frames: " + sum / 10 + "ms");
 }
 
+// function setMovingPizzaInitialPositions() {
+//   var items = document.querySelectorAll('.mover');
+//
+// }
+
 // The following code for sliding background pizzas was pulled from Ilya's demo found at:
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
 
 // Moves the sliding background pizzas based on scroll position
+// lastMeasuredPageYOffset
+// see: https://gist.github.com/Warry/4254579
 function updatePositions() {
+    var currentPageYOffset = window.pageYOffset;
+    if ( currentPageYOffset === lastMeasuredPageYOffset ) {
+      requestAnimationFrame(updatePositions);
+      return;
+    }
+    lastMeasuredPageYOffset = currentPageYOffset;
   frame++;
   window.performance.mark("mark_start_frame");
 
   var items = document.querySelectorAll('.mover');
   var scrollTop = document.body.scrollTop;
-  for (var i = 0; i < items.length; i++) {
-    var phase = Math.sin((scrollTop / 1250) + (i % 5));
-    items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
-  }
+  //requestAnimationFrame(function() {
+
+  // Should only update styles for visible items
+  var item, phase;
+
+    for ( var i = 0; i < items.length; ++i ) {
+      item = items[i];
+      // if ( !item.classList.contains('layer') ) {
+      //   item.classList.add('layer');
+      // }
+      //itemRect = item.getBoundingClientRect();
+      // See: http://stackoverflow.com/questions/123999/how-to-tell-if-a-dom-element-is-visible-in-the-current-viewport/7557433#7557433
+
+      // itemIsVisible = itemRect.top < window.innerHeight && itemRect.bottom > 0 && itemRect.right > 0 && itemRect.left < window.innerWidth;
+      // if ( itemIsVisible ) {
+      //   item.classList.add('layer');
+      //
+      // } else {
+      //   item.classList.remove('layer');
+      // }
+
+
+      phase = Math.sin((scrollTop / 1250) + (i % 5));
+      item.style.transform = "translate(" + 100 * phase + "px, 0)";
+    }
+
+
+
+
+  // Update styles of visible items
+  // requestAnimationFrame(function() {
+  //
+  //   var item, phase;
+  //   for ( var i = 0; i < items.length; ++i ) {
+  //     item = items[i];
+  //     if ( !item.classList.contains('layer') ) {
+  //       item.classList.add('layer');
+  //     }
+  //
+  //     phase = Math.sin((scrollTop / 1250) + (i % 5));
+  //     item.style.transform = "translate(" + 100 * phase + "px, 0)";
+  //   }
+  //
+  // });
+  //});
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
   // Super easy to create custom metrics.
@@ -516,16 +570,22 @@ function updatePositions() {
     var timesToUpdatePosition = window.performance.getEntriesByName("measure_frame_duration");
     logAverageFrame(timesToUpdatePosition);
   }
+
+  requestAnimationFrame(updatePositions);
 }
 
 // runs updatePositions on scroll
-window.addEventListener('scroll', updatePositions);
+//window.addEventListener('scroll', updatePositions);
+
+var lastMeasuredPageYOffset = window.pageYOffset;
+updatePositions();
 
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', function() {
   var cols = 8;
   var s = 256;
-  for (var i = 0; i < 200; i++) {
+  var numberOfMovingPizzas = 80;
+  for (var i = 0; i < numberOfMovingPizzas; i++) {
     var elem = document.createElement('img');
     elem.className = 'mover';
     elem.src = "images/pizza.png";
@@ -533,7 +593,12 @@ document.addEventListener('DOMContentLoaded', function() {
     elem.style.width = "73.333px";
     elem.basicLeft = (i % cols) * s;
     elem.style.top = (Math.floor(i / cols) * s) + 'px';
+
+    //
+    elem.style.left = elem.basicLeft + 'px';
+    elem.classList.add('layer');
+    //
     document.querySelector("#movingPizzas1").appendChild(elem);
   }
-  updatePositions();
+  //updatePositions();
 });
