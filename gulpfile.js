@@ -1,4 +1,5 @@
 var gulp = require('gulp');
+// Required plugins for tasks
 var rename = require('gulp-rename');
 var imagemin = require('gulp-imagemin');
 var imageResize = require('gulp-image-resize');
@@ -8,9 +9,11 @@ var uglify = require('gulp-uglify');
 var pump = require('pump');
 
 gulp.task('default', function() {
+  // Testing
   console.log('GULP GULP GULP');
 });
 
+// Compress images
 gulp.task('imagemin', function() {
   console.log("Begin imagemin task...");
   gulp.src('src/img/*')
@@ -21,6 +24,7 @@ gulp.task('imagemin', function() {
       .pipe(gulp.dest('dist/views/images/'));
 });
 
+// Resize images
 gulp.task('imageResize', function() {
   var srcImgPath = 'src/views/images/';
   var destImgPath = 'dist/views/images/';
@@ -67,6 +71,7 @@ gulp.task('imageResize', function() {
 
 });
 
+// Minify CSS
 gulp.task('minify-css', function() {
   gulp.src('src/css/*.css')
       .pipe(cleanCSS())
@@ -76,6 +81,7 @@ gulp.task('minify-css', function() {
       .pipe(gulp.dest('dist/views/css/'))
 });
 
+// Minify HTML
 gulp.task('minify-html', function() {
   gulp.src('src/*.html')
       .pipe(htmlmin({
@@ -93,6 +99,7 @@ gulp.task('minify-html', function() {
       .pipe(gulp.dest('dist/views/'));
 });
 
+// Minify JS
 gulp.task('minify-js', function(err) {
   pump([gulp.src('src/js/*.js'),
         uglify(),
@@ -105,10 +112,12 @@ gulp.task('minify-js', function(err) {
       err);
 });
 
-// Watchers
+// Watchers - automatically minify HTML, CSS, and JS files
 var watchHTML = gulp.watch(['src/*.html', 'src/views/*.html'], ['minify-html']);
 var watchCSS = gulp.watch(['src/css/*.css', 'src/views/css/*.css'], ['minify-css']);
 var watchJS = gulp.watch(['src/js/*.js', 'src/views/js/*.js'], ['minify-js']);
+
+// Log watcher activity to the console.
 [watchHTML, watchCSS, watchJS].forEach(function(watcher) {
   watcher.on('change', function(event) {
     console.log('GULP WATCHER');
