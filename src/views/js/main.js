@@ -421,34 +421,9 @@ var resizePizzas = function(size) {
 
   changeSliderLabel(size);
 
-   // Returns the size difference to change a pizza element from one size to another. Called by changePizzaSlices(size).
-  // function determineDx (elem, size) {
-  //   var oldWidth = elem.offsetWidth;
-  //   var windowWidth = document.querySelector("#randomPizzas").offsetWidth;
-  //   var oldSize = oldWidth / windowWidth;
-  //
-  //   // Changes the slider value to a percent width
-  //   function sizeSwitcher (size) {
-  //     switch(size) {
-  //       case "1":
-  //         return 0.25;
-  //       case "2":
-  //         return 0.3333;
-  //       case "3":
-  //         return 0.5;
-  //       default:
-  //         console.log("bug in sizeSwitcher");
-  //     }
-  //   }
-  //
-  //   var newSize = sizeSwitcher(size);
-  //   var dx = (newSize - oldSize) * windowWidth;
-  //
-  //   return dx;
-  // }
-
+  // Returns the fractional width of a pizza container relative to its parent's width
+  // for a given size.
   function pizzaContainerWidthPercentageForSize(size) {
-    //var windowWidth = document.querySelector("#randomPizzas").offsetWidth;
     switch(size) {
       case "1":
         return 0.25;
@@ -463,14 +438,14 @@ var resizePizzas = function(size) {
 
   // Iterates through pizza elements on the page and changes their widths
   function changePizzaSizes(size) {
+    // The new width for the pizza containers
+    var newwidth = pizzaContainerWidthPercentageForSize(size) * 100;
+    // Get all the pizza containers
     var randomPizzaContainers = document.querySelectorAll(".randomPizzaContainer");
-    //var windowWidth = document.querySelector("#randomPizzas").offsetWidth;
+
+    // Set the new width on every pizza container
     for (var i = 0; i < randomPizzaContainers.length; i++) {
       var pizzaContainer = randomPizzaContainers[i];
-      //var dx = determineDx(document.querySelectorAll(".randomPizzaContainer")[i], size);
-      // var newwidth = (document.querySelectorAll(".randomPizzaContainer")[i].offsetWidth + dx) + 'px';
-      var newwidth = pizzaContainerWidthPercentageForSize(size) * 100;
-      //document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth;
       pizzaContainer.style.width = newwidth + '%';
     }
   }
@@ -512,74 +487,42 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
   console.log("Average scripting time to generate last 10 frames: " + sum / 10 + "ms");
 }
 
-// function setMovingPizzaInitialPositions() {
-//   var items = document.querySelectorAll('.mover');
-//
-// }
 
 // The following code for sliding background pizzas was pulled from Ilya's demo found at:
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
 
-// Moves the sliding background pizzas based on scroll position
-// lastMeasuredPageYOffset
-// see: https://gist.github.com/Warry/4254579
+// Moves the sliding background pizzas based on scroll position.
+// This function removes the need for an event listener on the 'scroll' event. On each
+// animation frame it checks whether the page has moved vertically ( scrolled ) since the last frame.
+// If scrolling has occurred, the positions of the pizzas are updated; otherwize, the function just
+// returns early and is called again on the next available animation frame.
+//
+// The scroll event can fire at any time. Using this method instead guarantees that the javascript is
+// executed properly at the beginning of an animation frame.
 function updatePositions() {
-    var currentPageYOffset = window.pageYOffset;
-    if ( currentPageYOffset === lastMeasuredPageYOffset ) {
-      requestAnimationFrame(updatePositions);
-      return;
-    }
-    lastMeasuredPageYOffset = currentPageYOffset;
+  var currentPageYOffset = window.pageYOffset;
+
+  // Check if any scrolling has occurred. If not, just call this function again on the
+  // next animation frame and return early.
+  if ( currentPageYOffset === lastMeasuredPageYOffset ) {
+    requestAnimationFrame(updatePositions);
+    return;
+  }
   frame++;
   window.performance.mark("mark_start_frame");
 
+  lastMeasuredPageYOffset = currentPageYOffset;
+
+  // Scrolling has occurred.
+  // Update the positions of the moving pizzas.
   var items = document.querySelectorAll('.mover');
   var scrollTop = document.body.scrollTop;
-  //requestAnimationFrame(function() {
-
-  // Should only update styles for visible items
   var item, phase;
-
-    for ( var i = 0; i < items.length; ++i ) {
-      item = items[i];
-      // if ( !item.classList.contains('layer') ) {
-      //   item.classList.add('layer');
-      // }
-      //itemRect = item.getBoundingClientRect();
-      // See: http://stackoverflow.com/questions/123999/how-to-tell-if-a-dom-element-is-visible-in-the-current-viewport/7557433#7557433
-
-      // itemIsVisible = itemRect.top < window.innerHeight && itemRect.bottom > 0 && itemRect.right > 0 && itemRect.left < window.innerWidth;
-      // if ( itemIsVisible ) {
-      //   item.classList.add('layer');
-      //
-      // } else {
-      //   item.classList.remove('layer');
-      // }
-
-
-      phase = Math.sin((scrollTop / 1250) + (i % 5));
-      item.style.transform = "translate(" + 100 * phase + "px, 0)";
-    }
-
-
-
-
-  // Update styles of visible items
-  // requestAnimationFrame(function() {
-  //
-  //   var item, phase;
-  //   for ( var i = 0; i < items.length; ++i ) {
-  //     item = items[i];
-  //     if ( !item.classList.contains('layer') ) {
-  //       item.classList.add('layer');
-  //     }
-  //
-  //     phase = Math.sin((scrollTop / 1250) + (i % 5));
-  //     item.style.transform = "translate(" + 100 * phase + "px, 0)";
-  //   }
-  //
-  // });
-  //});
+  for ( var i = 0; i < items.length; ++i ) {
+    item = items[i];
+    phase = Math.sin((scrollTop / 1250) + (i % 5));
+    item.style.transform = "translate(" + 100 * phase + "px, 0)";
+  }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
   // Super easy to create custom metrics.
@@ -590,13 +533,15 @@ function updatePositions() {
     logAverageFrame(timesToUpdatePosition);
   }
 
+  // TODO
   requestAnimationFrame(updatePositions);
 }
 
-// runs updatePositions on scroll
-//window.addEventListener('scroll', updatePositions);
-
+// The vertical offset of the window. Used in updatePositions() to check whether
+// any scrolling has occurred since the function was last called.
 var lastMeasuredPageYOffset = window.pageYOffset;
+
+// Begin updating positions of the moving pizzas.
 updatePositions();
 
 // Generates the sliding pizzas when the page loads.
@@ -605,40 +550,33 @@ document.addEventListener('DOMContentLoaded', function() {
   var s = 256;
   var numberOfMovingPizzas = 80;
   for (var i = 0; i < numberOfMovingPizzas; i++) {
-    var elem = document.createElement('img');
-    elem.className = 'mover';
-    elem.src = "images/pizza.png";
-    elem.style.height = "100px";
-    elem.style.width = "73.333px";
+    var elem = newMovingPizza();
     elem.basicLeft = (i % cols) * s;
     elem.style.top = (Math.floor(i / cols) * s) + 'px';
-
-    //
     elem.style.left = elem.basicLeft + 'px';
-    elem.classList.add('layer');
-    //
+
     document.querySelector("#movingPizzas1").appendChild(elem);
   }
-  //updatePositions();
 });
 
+// Creates and returns a new moving pizza <img> element.
 function newMovingPizza() {
   var elem = document.createElement('img');
   elem.className = 'mover';
   elem.src = "images/pizza.png";
   elem.style.height = "100px";
   elem.style.width = "73.333px";
-  // elem.basicLeft = (i % cols) * s;
-  // elem.style.top = (Math.floor(i / cols) * s) + 'px';
-  //
-  // //
-  // elem.style.left = elem.basicLeft + 'px';
+  // Put this element on its own layer to reduce painting
   elem.classList.add('layer');
-  //
 
   return elem;
 }
 
+// Updates the total number of moving pizzas. For example, if the window's width is doubled,
+// the number of moving pizzas in the DOM is increased. If the window width is decreased, the number
+// of moving pizzas is reduced.
+//
+// Called after the window has resized.
 function updateMovingPizzas() {
   // Get the current number of moving pizzas
   var movingPizzas = document.querySelectorAll('.mover');
@@ -647,11 +585,11 @@ function updateMovingPizzas() {
   // Get the required number of moving pizzas
   var s, columns, rows, requiredNumberOfMovingPizzas, dx;
   s = 256;
-  console.log("window width: " + window.innerWidth);
   columns = Math.ceil(window.innerWidth / s) + 1;
   rows = Math.ceil(window.innerHeight / s);
   requiredNumberOfMovingPizzas = columns * rows;
   dx = requiredNumberOfMovingPizzas - currentNumberOfMovingPizzas;
+  // Just return early if we don't need to add or remove pizzas.
   if ( dx === 0 ) { return; }
 
   // Add or remove pizzas as required
@@ -669,25 +607,17 @@ function updateMovingPizzas() {
   }
 
   // Reposition pizzas
-  /*
-  elem.basicLeft = (i % cols) * s;
-  elem.style.top = (Math.floor(i / cols) * s) + 'px';
-
-  //
-  elem.style.left = elem.basicLeft + 'px';
-  */
   var pizza;
   for ( var i = 0; i < movingPizzasContainer.childElementCount; ++i ) {
     pizza = movingPizzasContainer.childNodes[i];
     pizza.basicLeft = ( i % columns ) * s;
     pizza.style.top = (Math.floor(i / columns) * s) + 'px';
     pizza.style.left = pizza.basicLeft + 'px';
-    console.log("BASIC: " + pizza.basicLeft + " TOP: " + pizza.style.top + " LEFT: " + pizza.style.left);
+    //console.log("BASIC: " + pizza.basicLeft + " TOP: " + pizza.style.top + " LEFT: " + pizza.style.left);
   }
-
-  console.log("FINISHED UPDATING MOVING PIZZAS!");
 }
 
+// Update the number of moving pizzas after the resize event has 'finished'.
 // see: https://css-tricks.com/snippets/jquery/done-resizing-event/
 var resizeTimer;
 window.addEventListener("resize", function() {
@@ -695,7 +625,6 @@ window.addEventListener("resize", function() {
   resizeTimer = setTimeout(function() {
     // Check if background pizzas should be added or removed based on current
     // size of the viewport
-    console.log("Begin updating moving pizzas.");
     updateMovingPizzas();
   }, 250);
 });
